@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Vom Portemonnaie zum Fingertipp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{background:#C8BFB2;font-family:'Helvetica Neue',Arial,sans-serif;min-height:100vh;color:#1A1713}
+        
+        @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        @keyframes arrive{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+        #app{display:flex;flex-direction:column;align-items:center;padding:28px 16px 60px}
+        .nav{display:flex;gap:5px;margin-bottom:22px;align-items:center;flex-wrap:wrap;justify-content:center}
+        
+        .page{background:#F4EEE5;width:100%;max-width:520px;padding:40px 32px 36px 40px;position:relative;box-shadow:-4px 0 10px rgba(0,0,0,0.08),0 20px 50px rgba(0,0,0,0.20);border-radius:2px}
+        .spine{position:absolute;left:0;top:0;bottom:0;width:10px;background:linear-gradient(90deg,rgba(0,0,0,0.07),transparent);pointer-events:none}
+        
+        .section{display:none}
+        .section.active{display:block;animation:fadeUp 0.5s ease both}
+
+        /* Karten-Styling */
+        .cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+        .flip-wrap{perspective:900px;width:100%;aspect-ratio:1.586/1}
+        .flip-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 0.6s cubic-bezier(.25,.46,.45,.94);cursor:pointer}
+        .flip-inner.flipped{transform:rotateY(180deg)}
+        .face{position:absolute;inset:0;border-radius:10px;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+        .face-back{transform:rotateY(180deg)}
+        
+        .chip{width:26px;height:19px;border-radius:3px;background:linear-gradient(135deg,#D4AF6A,#A8842A,#C49A40);position:relative;flex-shrink:0}
+        
+        /* Buttons & Interaktion */
+        .btn-dark{width:100%;padding:13px;background:#1A1713;border:none;border-radius:5px;color:#F4EEE5;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;font-weight:500;cursor:pointer;transition: background 0.3s}
+        .btn-dark:hover{background:#333}
+        .btn-outline{padding:12px 28px;background:transparent;border:1px solid rgba(58,100,120,0.35);border-radius:5px;color:#3A6478;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;font-weight:500;cursor:pointer}
+        .btn-reset{margin-top:22px;width:100%;padding:13px;background:transparent;border:1px solid rgba(28,24,18,0.18);border-radius:5px;color:#A09080;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;cursor:pointer}
+        
+        .rule{height:1px;background:rgba(28,24,18,0.10);margin:18px 0}
+        .pulse-hint{text-align:center;font-size:11px;color:#A09080;letter-spacing:0.1em;margin-top:4px;animation:pulse 2s ease-in-out infinite}
+        
+        /* Abo-Zeitstrahl */
+        .prot-row{display:flex;align-items:flex-start;gap:12px;padding:11px 13px;background:rgba(255,255,255,0.40);border:1px solid rgba(28,24,18,0.10);border-radius:5px;margin-bottom:8px}
+        .abo-dot{width:10px;height:10px;border-radius:50%;margin-top:4px;flex-shrink:0}
+        .abo-line{width:1px;flex:1;min-height:14px;margin:3px 0}
+        .price-grid{display:flex;gap:8px;margin-top:8px}
+        .price-box{flex:1;padding:9px 11px;border-radius:5px}
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div class="nav" id="nav"></div>
+    <div class="page">
+        <div class="spine"></div>
+        <div id="sec-karten" class="section active"></div>
+        <div id="sec-abo"    class="section"></div>
+        <div id="sec-frage"  class="section"></div>
+        <div id="sec-schutz" class="section"></div>
+    </div>
+</div>
+
+<script>
+    const INK="#1A1713", SOFT="#5A5248", FAINT="#A09080", TEAL="#3A6478", GREEN="#2A6A4A", WARN="#6A2C38", RULE="rgba(28,24,18,0.10)";
+
+    const CARDS = [
+        {id:"debit", name:"Debitkarte", tag:"DEBIT", c1:"#1C3E57", c2:"#2C5F82", acc:"#72C1DC", short:"Direkt vom Konto", logik:"Zahlung wird sofort vom Konto abgebucht.", gut:["Alltag, Supermarkt, ÖV","Immer aktueller Kontostand"], achtung:["Konto muss gedeckt sein","Kontaktlos-Limite prüfen"]},
+        {id:"kredit", name:"Kreditkarte", tag:"KREDIT", c1:"#3C2918", c2:"#654232", acc:"#D4AD72", short:"Rechnung kommt später", logik:"Zahlung läuft über den Kartenanbieter.", gut:["Hotel, Mietwagen, Reisen","Onlinebuchungen & Notfälle"], achtung:["Rechnung immer voll zahlen","Überblick behalten","Teilzahlung vermeiden"], revolving:true},
+        {id:"prepaid", name:"Prepaidkarte", tag:"PREPAID", c1:"#1A3C2C", c2:"#2A5C42", acc:"#6DC8A4", short:"Vorher aufladen", logik:"Ausgaben nur im Rahmen des Guthabens.", gut:["Klare Budgetgrenze","Gut für Jugendliche","Sicherer Onlinekauf"], achtung:["Teils hohe Gebühren","Nicht überall akzeptiert"]},
+        {id:"virtual", name:"Virtuelle Karte", tag:"DIGITAL", c1:"#2A1F4A", c2:"#4A3880", acc:"#A090D8", short:"Digitale Kartendaten", logik:"Oft Einmal-Daten für maximale Sicherheit.", gut:["Sicheres Online-Shopping","Schutz der Hauptkarte","Sofort einsatzbereit"], achtung:["Handy-Akku erforderlich","Nur für Digital-Zahlung"]}
+    ];
+
+    const ABO = [
+        {text:"Du siehst eine App, die interessant klingt.", sub:"Probemonat kostenlos. Einfach testen."},
+        {text:"Es gibt zwei Preise.", prices:true},
+        {text:"4.90 CHF klingt gut.", sub:"Beim Jahresabo wird aber der gesamte Betrag auf einmal fällig."},
+        {text:"Du bestätigst mit Face ID.", sub:"Zwei Sekunden. Kein Nachdenken nötig."},
+        {text:"Der Monat vergeht.", sub:"Du nutzt die App kaum noch."},
+        {text:"Nach dem Probemonat.", highlight:"– 58.80 CHF", hlsub:"Ein ganzes Jahr. Auf einmal."},
+        {text:"Keine neue Entscheidung.", sub:"Die Abbuchung kam aus einem alten 'Ja'."}
+    ];
+
+    const SECS = ["karten", "abo", "frage", "schutz"];
+    const LBLS = ["Karten", "Abo-Fall", "Frage", "Schutz"];
+    let cur = "karten", flipped = new Set(), aboStep = 0;
+
+    function renderNav() {
+        const idx = SECS.indexOf(cur);
+        document.getElementById("nav").innerHTML = SECS.map((s, i) => {
+            const bg = s === cur ? INK : i < idx ? GREEN : "rgba(28,24,18,0.10)";
+            const col = s === cur ? "#F4EEE5" : i < idx ? "white" : FAINT;
+            return `
+                <div style="display:flex;align-items:center;gap:5px">
+                    <div onclick="if(${i}<=idx)showSec('${s}')" style="padding:5px 11px;border-radius:20px;background:${bg};color:${col};font-size:10px;text-transform:uppercase;font-weight:500;cursor:pointer">${i < idx ? "✓" : LBLS[i]}</div>
+                    ${i < SECS.length - 1 ? `<div style="width:10px;height:1px;background:${RULE}"></div>` : ""}
+                </div>`;
+        }).join("");
+    }
+
+    function showSec(s) {
+        SECS.forEach(id => document.getElementById("sec-" + id).classList.toggle("active", id === s));
+        cur = s; 
+        renderNav();
+        if(s === "karten") renderKarten();
+        if(s === "abo") renderAbo();
+        if(s === "frage") renderFrage();
+        if(s === "schutz") renderSchutz();
+    }
+
+    function toggleCard(id) {
+        flipped.add(id);
+        document.getElementById("fi-" + id).classList.toggle("flipped");
+        renderKarten(); // Update CTA Button
+    }
+
+    function renderKarten() {
+        const grid = CARDS.map(c => `
+            <div class="flip-wrap" onclick="toggleCard('${c.id}')">
+                <div class="flip-inner ${flipped.has(c.id) ? 'flipped' : ''}" id="fi-${c.id}">
+                    <div class="face" style="background:linear-gradient(145deg,${c.c1},${c.c2});padding:16px;color:white;display:flex;flex-direction:column;justify-content:space-between">
+                        <div class="chip"></div>
+                        <div>
+                            <div style="font-family:'Playfair Display',serif;font-weight:600">${c.name}</div>
+                            <div style="font-size:9px;opacity:0.7">${c.short}</div>
+                        </div>
+                    </div>
+                    <div class="face face-back" style="background:white;padding:12px;border:1px solid ${RULE};font-size:10px;display:flex;flex-direction:column;justify-content:center">
+                        <div style="font-weight:700;color:${INK};margin-bottom:4px">${c.name}</div>
+                        <div style="color:${SOFT};margin-bottom:6px">${c.logik}</div>
+                        ${c.gut.map(g => `<div style="color:${GREEN}">✓ ${g}</div>`).join("")}
+                        <div style="margin-top:4px">${c.achtung.map(a => `<div style="color:${WARN}">⚠ ${a}</div>`).join("")}</div>
+                    </div>
+                </div>
+            </div>`).join("");
+
+        const allDone = flipped.size === CARDS.length;
+        document.getElementById("sec-karten").innerHTML = `
+            <h1 style="font-family:'Playfair Display',serif;font-size:24px;margin-bottom:8px">Welche Karte <em>kann was?</em></h1>
+            <p style="font-size:13px;color:${SOFT};margin-bottom:20px">Tippe auf die Karten, um die Details zu sehen.</p>
+            <div class="cards-grid">${grid}</div>
+            ${allDone ? `<button class="btn-dark" onclick="showSec('abo')">Weiter →</button>` : `<div class="pulse-hint">Alle Karten umdrehen</div>`}`;
+    }
+
+    function renderAbo() {
+        let rows = ABO.map((s, i) => {
+            const vis = i <= aboStep;
+            return `
+                <div style="display:flex;gap:14px;opacity:${vis ? 1 : 0.1};margin-bottom:15px">
+                    <div style="display:flex;flex-direction:column;align-items:center">
+                        <div class="abo-dot" style="background:${i === 5 && vis ? WARN : vis ? TEAL : FAINT}"></div>
+                        ${i < ABO.length - 1 ? `<div class="abo-line" style="background:${RULE}"></div>` : ""}
+                    </div>
+                    <div>
+                        <div style="font-size:14px;font-weight:${i===5?'700':'400'}">${s.text}</div>
+                        ${vis && s.prices ? `
+                            <div class="price-grid">
+                                <div class="price-box" style="border:1px solid ${RULE}">9.90 <small>CHF/Mt.</small></div>
+                                <div class="price-box" style="background:${TEAL}10;border:1px solid ${TEAL}">4.90 <small>CHF/Mt.</small></div>
+                            </div>` : ""}
+                        ${vis && s.sub ? `<div style="font-size:12px;color:${SOFT};margin-top:4px">${s.sub}</div>` : ""}
+                        ${vis && s.highlight ? `<div style="font-size:24px;color:${WARN};font-weight:700;margin-top:5px">${s.highlight}</div>` : ""}
+                    </div>
+                </div>`;
+        }).join("");
+
+        const atEnd = aboStep >= ABO.length - 1;
+        document.getElementById("sec-abo").innerHTML = `
+            <h2 style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:20px">Gezahlt, ohne es zu merken.</h2>
+            <div>${rows}</div>
+            <div style="margin-top:20px">
+                ${atEnd ? `<button class="btn-dark" onclick="showSec('frage')">Zur Schlussfrage →</button>` : `<button class="btn-dark" onclick="aboStep++;renderAbo()">Weiter</button>`}
+            </div>`;
+    }
+
+    function renderFrage() {
+        document.getElementById("sec-frage").innerHTML = `
+            <div style="text-align:center;padding:20px 0">
+                <div style="font-family:'Playfair Display',serif;font-size:22px;margin-bottom:30px">Welche Zahlung hast du erst bemerkt, als sie schon passiert war?</div>
+                <p style="color:${SOFT};font-size:13px;margin-bottom:30px">Diese Frage gehört dir. Denk kurz darüber nach.</p>
+                <button class="btn-outline" onclick="showSec('schutz')">Schutzfunktionen →</button>
+            </div>`;
+    }
+
+    function renderSchutz() {
+        const items = [
+            {i:"🔔", t:"Push-Mitteilungen für jede Zahlung aktivieren."},
+            {i:"⚙️", t:"Tages- und Monatslimiten in der App setzen."},
+            {i:"🔁", t:"Abos monatlich prüfen: Was kann weg?"},
+            {i:"🔒", t:"Wissen, wie man die Karte sofort sperrt."},
+            {i:"💵", t:"Eine kleine Bargeldreserve behalten."}
+        ];
+        const rows = items.map(item => `
+            <div class="prot-row">
+                <span>${item.i}</span><span style="font-size:13px">${item.t}</span>
+            </div>`).join("");
+        
+        document.getElementById("sec-schutz").innerHTML = `
+            <h2 style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:10px">Was wirklich hilft.</h2>
+            <div class="rule"></div>
+            ${rows}
+            <button class="btn-reset" onclick="location.reload()">↻ Neu starten</button>`;
+    }
+
+    renderNav();
+    renderKarten();
+</script>
+</body>
+</html>
