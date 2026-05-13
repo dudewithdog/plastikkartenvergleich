@@ -2,51 +2,150 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vom Portemonnaie zum Fingertipp</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        body{background:#C8BFB2;font-family:'Helvetica Neue',Arial,sans-serif;min-height:100vh;color:#1A1713}
+        
+        /* Basis-Setup für Apple-Geräte */
+        body {
+            background: #C8BFB2;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            color: #1A1713;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
         
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-        @keyframes arrive{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 
-        #app{display:flex;flex-direction:column;align-items:center;padding:28px 16px 60px}
-        .nav{display:flex;gap:5px;margin-bottom:22px;align-items:center;flex-wrap:wrap;justify-content:center}
-        
-        .page{background:#F4EEE5;width:100%;max-width:520px;padding:40px 32px 36px 40px;position:relative;box-shadow:-4px 0 10px rgba(0,0,0,0.08),0 20px 50px rgba(0,0,0,0.20);border-radius:2px}
-        .spine{position:absolute;left:0;top:0;bottom:0;width:10px;background:linear-gradient(90deg,rgba(0,0,0,0.07),transparent);pointer-events:none}
-        
-        .section{display:none}
-        .section.active{display:block;animation:fadeUp 0.5s ease both}
+        #app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 16px 60px;
+        }
 
-        /* Karten-Styling */
-        .cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
-        .flip-wrap{perspective:900px;width:100%;aspect-ratio:1.586/1}
-        .flip-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 0.6s cubic-bezier(.25,.46,.45,.94);cursor:pointer}
-        .flip-inner.flipped{transform:rotateY(180deg)}
-        .face{position:absolute;inset:0;border-radius:10px;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
-        .face-back{transform:rotateY(180deg)}
+        /* Navigation: Flexibler für verschiedene Breiten */
+        .nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
         
-        .chip{width:26px;height:19px;border-radius:3px;background:linear-gradient(135deg,#D4AF6A,#A8842A,#C49A40);position:relative;flex-shrink:0}
+        /* Das Papier-Layout: Adaptiv von Handy bis Tablet */
+        .page {
+            background: #F4EEE5;
+            width: 100%;
+            max-width: 600px;
+            padding: 32px 24px;
+            position: relative;
+            box-shadow: -4px 0 10px rgba(0,0,0,0.08), 0 20px 50px rgba(0,0,0,0.20);
+            border-radius: 4px;
+        }
+
+        /* iPad-Spezifische Anpassung */
+        @media (min-width: 768px) {
+            .page { padding: 50px 40px; }
+            #app { padding-top: 40px; }
+        }
+
+        .spine {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 12px;
+            background: linear-gradient(90deg, rgba(0,0,0,0.07), transparent);
+            pointer-events: none;
+        }
         
-        /* Buttons & Interaktion */
-        .btn-dark{width:100%;padding:13px;background:#1A1713;border:none;border-radius:5px;color:#F4EEE5;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;font-weight:500;cursor:pointer;transition: background 0.3s}
-        .btn-dark:hover{background:#333}
-        .btn-outline{padding:12px 28px;background:transparent;border:1px solid rgba(58,100,120,0.35);border-radius:5px;color:#3A6478;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;font-weight:500;cursor:pointer}
-        .btn-reset{margin-top:22px;width:100%;padding:13px;background:transparent;border:1px solid rgba(28,24,18,0.18);border-radius:5px;color:#A09080;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;cursor:pointer}
+        .section { display: none; }
+        .section.active { display: block; animation: fadeUp 0.5s ease both; }
+
+        /* Karten-Grid: Rutscht auf kleinen Handys automatisch untereinander */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .flip-wrap { perspective: 1000px; width: 100%; aspect-ratio: 1.586/1; }
+        .flip-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(.23,1,.32,1);
+            cursor: pointer;
+        }
+        .flip-inner.flipped { transform: rotateY(180deg); }
         
-        .rule{height:1px;background:rgba(28,24,18,0.10);margin:18px 0}
-        .pulse-hint{text-align:center;font-size:11px;color:#A09080;letter-spacing:0.1em;margin-top:4px;animation:pulse 2s ease-in-out infinite}
+        .face {
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .face-back { transform: rotateY(180deg); background: white; border: 1px solid rgba(0,0,0,0.05); }
         
-        /* Abo-Zeitstrahl */
-        .prot-row{display:flex;align-items:flex-start;gap:12px;padding:11px 13px;background:rgba(255,255,255,0.40);border:1px solid rgba(28,24,18,0.10);border-radius:5px;margin-bottom:8px}
-        .abo-dot{width:10px;height:10px;border-radius:50%;margin-top:4px;flex-shrink:0}
-        .abo-line{width:1px;flex:1;min-height:14px;margin:3px 0}
-        .price-grid{display:flex;gap:8px;margin-top:8px}
-        .price-box{flex:1;padding:9px 11px;border-radius:5px}
+        .chip { width: 32px; height: 22px; border-radius: 4px; background: linear-gradient(135deg,#D4AF6A,#A8842A); flex-shrink: 0; }
+        
+        /* Buttons: Mindestens 44px Höhe für perfekte Touch-Bedienung */
+        .btn-dark {
+            width: 100%;
+            min-height: 48px;
+            padding: 12px;
+            background: #1A1713;
+            border: none;
+            border-radius: 8px;
+            color: #F4EEE5;
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-dark:active { opacity: 0.8; }
+        
+        .btn-outline {
+            min-height: 44px;
+            padding: 12px 24px;
+            background: transparent;
+            border: 1.5px solid rgba(58,100,120,0.4);
+            border-radius: 8px;
+            color: #3A6478;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .rule { height: 1px; background: rgba(28,24,18,0.10); margin: 24px 0; }
+        .pulse-hint { text-align: center; font-size: 11px; color: #A09080; margin-top: 12px; animation: pulse 2s infinite; }
+        
+        /* Abo-Liste */
+        .prot-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 14px;
+            background: rgba(255,255,255,0.5);
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+        .abo-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+        .abo-line { width: 2px; flex: 1; min-height: 20px; background: rgba(0,0,0,0.05); margin: 4px 0; }
     </style>
 </head>
 <body>
@@ -66,35 +165,36 @@
     const INK="#1A1713", SOFT="#5A5248", FAINT="#A09080", TEAL="#3A6478", GREEN="#2A6A4A", WARN="#6A2C38", RULE="rgba(28,24,18,0.10)";
 
     const CARDS = [
-        {id:"debit", name:"Debitkarte", tag:"DEBIT", c1:"#1C3E57", c2:"#2C5F82", acc:"#72C1DC", short:"Direkt vom Konto", logik:"Zahlung wird sofort vom Konto abgebucht.", gut:["Alltag, Supermarkt, ÖV","Immer aktueller Kontostand"], achtung:["Konto muss gedeckt sein","Kontaktlos-Limite prüfen"]},
-        {id:"kredit", name:"Kreditkarte", tag:"KREDIT", c1:"#3C2918", c2:"#654232", acc:"#D4AD72", short:"Rechnung kommt später", logik:"Zahlung läuft über den Kartenanbieter.", gut:["Hotel, Mietwagen, Reisen","Onlinebuchungen & Notfälle"], achtung:["Rechnung immer voll zahlen","Überblick behalten","Teilzahlung vermeiden"], revolving:true},
-        {id:"prepaid", name:"Prepaidkarte", tag:"PREPAID", c1:"#1A3C2C", c2:"#2A5C42", acc:"#6DC8A4", short:"Vorher aufladen", logik:"Ausgaben nur im Rahmen des Guthabens.", gut:["Klare Budgetgrenze","Gut für Jugendliche","Sicherer Onlinekauf"], achtung:["Teils hohe Gebühren","Nicht überall akzeptiert"]},
-        {id:"virtual", name:"Virtuelle Karte", tag:"DIGITAL", c1:"#2A1F4A", c2:"#4A3880", acc:"#A090D8", short:"Digitale Kartendaten", logik:"Oft Einmal-Daten für maximale Sicherheit.", gut:["Sicheres Online-Shopping","Schutz der Hauptkarte","Sofort einsatzbereit"], achtung:["Handy-Akku erforderlich","Nur für Digital-Zahlung"]}
+        {id:"debit", name:"Debitkarte", tag:"DEBIT", c1:"#1C3E57", c2:"#2C5F82", acc:"#72C1DC", short:"Direkt vom Konto", logik:"Zahlung wird sofort abgebucht.", gut:["Alltag & Supermarkt","Kontrolle in Echtzeit"], achtung:["Konto muss gedeckt sein"]},
+        {id:"kredit", name:"Kreditkarte", tag:"KREDIT", c1:"#3C2918", c2:"#654232", acc:"#D4AD72", short:"Rechnung am Monatsende", logik:"Zahlung via Kreditrahmen.", gut:["Hotels & Mietwagen","Weltweite Akzeptanz"], achtung:["Zinsen bei Teilzahlung"]},
+        {id:"prepaid", name:"Prepaidkarte", tag:"PREPAID", c1:"#1A3C2C", c2:"#2A5C42", acc:"#6DC8A4", short:"Vorher aufladen", logik:"Nur Guthaben verfügbar.", gut:["Volle Kostenkontrolle","Sicher für Online-Käufe"], achtung:["Aufladen nötig"]},
+        {id:"virtual", name:"Virtuelle Karte", tag:"DIGITAL", c1:"#2A1F4A", c2:"#4A3880", acc:"#A090D8", short:"Nur im Smartphone", logik:"Einmal-Daten für Sicherheit.", gut:["Extremer Schutz","Sofort erstellt"], achtung:["Handy-Akku nötig"]}
     ];
 
     const ABO = [
-        {text:"Du siehst eine App, die interessant klingt.", sub:"Probemonat kostenlos. Einfach testen."},
-        {text:"Es gibt zwei Preise.", prices:true},
-        {text:"4.90 CHF klingt gut.", sub:"Beim Jahresabo wird aber der gesamte Betrag auf einmal fällig."},
-        {text:"Du bestätigst mit Face ID.", sub:"Zwei Sekunden. Kein Nachdenken nötig."},
-        {text:"Der Monat vergeht.", sub:"Du nutzt die App kaum noch."},
-        {text:"Nach dem Probemonat.", highlight:"– 58.80 CHF", hlsub:"Ein ganzes Jahr. Auf einmal."},
-        {text:"Keine neue Entscheidung.", sub:"Die Abbuchung kam aus einem alten 'Ja'."}
+        {text:"Interessante neue App gefunden.", sub:"Probemonat gratis testen."},
+        {text:"Zwei Abo-Modelle zur Auswahl.", prices:true},
+        {text:"4.90 CHF klingt fair.", sub:"Aber: Das Jahresabo wird sofort fällig."},
+        {text:"Bestätigung per Face ID.", sub:"Ein Klick, keine Tipparbeit."},
+        {text:"Der Monat ist fast um.", sub:"Die App nutzt du eigentlich nicht mehr."},
+        {text:"Die Falle schnappt zu.", highlight:"– 58.80 CHF", hlsub:"Ein Jahr im Voraus bezahlt."},
+        {text:"Lerneffekt.", sub:"Das Abo läuft jetzt, ob du willst oder nicht."}
     ];
 
     const SECS = ["karten", "abo", "frage", "schutz"];
-    const LBLS = ["Karten", "Abo-Fall", "Frage", "Schutz"];
+    const LBLS = ["Karten", "Abo-Check", "Reflexion", "Tipps"];
     let cur = "karten", flipped = new Set(), aboStep = 0;
 
     function renderNav() {
         const idx = SECS.indexOf(cur);
         document.getElementById("nav").innerHTML = SECS.map((s, i) => {
-            const bg = s === cur ? INK : i < idx ? GREEN : "rgba(28,24,18,0.10)";
-            const col = s === cur ? "#F4EEE5" : i < idx ? "white" : FAINT;
+            const isDone = i < idx;
+            const isActive = s === cur;
+            const bg = isActive ? INK : isDone ? GREEN : "rgba(0,0,0,0.05)";
+            const col = isActive || isDone ? "white" : FAINT;
             return `
-                <div style="display:flex;align-items:center;gap:5px">
-                    <div onclick="if(${i}<=idx)showSec('${s}')" style="padding:5px 11px;border-radius:20px;background:${bg};color:${col};font-size:10px;text-transform:uppercase;font-weight:500;cursor:pointer">${i < idx ? "✓" : LBLS[i]}</div>
-                    ${i < SECS.length - 1 ? `<div style="width:10px;height:1px;background:${RULE}"></div>` : ""}
+                <div onclick="if(${i}<=idx)showSec('${s}')" style="padding:6px 12px; border-radius:20px; background:${bg}; color:${col}; font-size:11px; font-weight:600; cursor:pointer; transition: 0.3s">
+                    ${isDone ? "✓" : LBLS[i]}
                 </div>`;
         }).join("");
     }
@@ -107,29 +207,30 @@
         if(s === "abo") renderAbo();
         if(s === "frage") renderFrage();
         if(s === "schutz") renderSchutz();
+        window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     function toggleCard(id) {
         flipped.add(id);
         document.getElementById("fi-" + id).classList.toggle("flipped");
-        renderKarten(); // Update CTA Button
+        setTimeout(renderKarten, 300); 
     }
 
     function renderKarten() {
         const grid = CARDS.map(c => `
             <div class="flip-wrap" onclick="toggleCard('${c.id}')">
                 <div class="flip-inner ${flipped.has(c.id) ? 'flipped' : ''}" id="fi-${c.id}">
-                    <div class="face" style="background:linear-gradient(145deg,${c.c1},${c.c2});padding:16px;color:white;display:flex;flex-direction:column;justify-content:space-between">
+                    <div class="face" style="background:linear-gradient(145deg,${c.c1},${c.c2});padding:18px;color:white;display:flex;flex-direction:column;justify-content:space-between">
                         <div class="chip"></div>
                         <div>
-                            <div style="font-family:'Playfair Display',serif;font-weight:600">${c.name}</div>
-                            <div style="font-size:9px;opacity:0.7">${c.short}</div>
+                            <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:16px">${c.name}</div>
+                            <div style="font-size:10px;opacity:0.8">${c.short}</div>
                         </div>
                     </div>
-                    <div class="face face-back" style="background:white;padding:12px;border:1px solid ${RULE};font-size:10px;display:flex;flex-direction:column;justify-content:center">
-                        <div style="font-weight:700;color:${INK};margin-bottom:4px">${c.name}</div>
-                        <div style="color:${SOFT};margin-bottom:6px">${c.logik}</div>
-                        ${c.gut.map(g => `<div style="color:${GREEN}">✓ ${g}</div>`).join("")}
+                    <div class="face face-back" style="padding:14px;font-size:11px;display:flex;flex-direction:column;justify-content:center">
+                        <div style="font-weight:700;margin-bottom:6px">${c.name}</div>
+                        <div style="color:${SOFT};margin-bottom:8px">${c.logik}</div>
+                        ${c.gut.map(g => `<div style="color:${GREEN};margin-bottom:2px">✓ ${g}</div>`).join("")}
                         <div style="margin-top:4px">${c.achtung.map(a => `<div style="color:${WARN}">⚠ ${a}</div>`).join("")}</div>
                     </div>
                 </div>
@@ -137,72 +238,76 @@
 
         const allDone = flipped.size === CARDS.length;
         document.getElementById("sec-karten").innerHTML = `
-            <h1 style="font-family:'Playfair Display',serif;font-size:24px;margin-bottom:8px">Welche Karte <em>kann was?</em></h1>
-            <p style="font-size:13px;color:${SOFT};margin-bottom:20px">Tippe auf die Karten, um die Details zu sehen.</p>
+            <h1 style="font-family:'Playfair Display',serif;font-size:26px;margin-bottom:12px">Welche Karte <em>kann was?</em></h1>
+            <p style="font-size:14px;color:${SOFT};margin-bottom:24px">Tippe die Karten an, um ihre Geheimnisse zu lüften.</p>
             <div class="cards-grid">${grid}</div>
-            ${allDone ? `<button class="btn-dark" onclick="showSec('abo')">Weiter →</button>` : `<div class="pulse-hint">Alle Karten umdrehen</div>`}`;
+            ${allDone ? `<button class="btn-dark" onclick="showSec('abo')">Weiter zum Abo-Check →</button>` : `<div class="pulse-hint">Bitte alle Karten umdrehen</div>`}`;
     }
 
     function renderAbo() {
         let rows = ABO.map((s, i) => {
             const vis = i <= aboStep;
             return `
-                <div style="display:flex;gap:14px;opacity:${vis ? 1 : 0.1};margin-bottom:15px">
+                <div style="display:flex;gap:16px;opacity:${vis ? 1 : 0.15};margin-bottom:18px;transition:0.4s">
                     <div style="display:flex;flex-direction:column;align-items:center">
                         <div class="abo-dot" style="background:${i === 5 && vis ? WARN : vis ? TEAL : FAINT}"></div>
-                        ${i < ABO.length - 1 ? `<div class="abo-line" style="background:${RULE}"></div>` : ""}
+                        ${i < ABO.length - 1 ? `<div class="abo-line"></div>` : ""}
                     </div>
                     <div>
-                        <div style="font-size:14px;font-weight:${i===5?'700':'400'}">${s.text}</div>
+                        <div style="font-size:15px;font-weight:${i===5?'700':'500'}">${s.text}</div>
                         ${vis && s.prices ? `
-                            <div class="price-grid">
-                                <div class="price-box" style="border:1px solid ${RULE}">9.90 <small>CHF/Mt.</small></div>
-                                <div class="price-box" style="background:${TEAL}10;border:1px solid ${TEAL}">4.90 <small>CHF/Mt.</small></div>
+                            <div style="display:flex;gap:10px;margin:10px 0">
+                                <div style="flex:1;padding:10px;border:1px solid ${RULE};border-radius:8px;font-size:12px">9.90 <small>CHF/Mt.</small></div>
+                                <div style="flex:1;padding:10px;background:${TEAL}15;border:1.5px solid ${TEAL};border-radius:8px;font-size:12px;font-weight:600">4.90 <small>CHF/Mt.</small></div>
                             </div>` : ""}
-                        ${vis && s.sub ? `<div style="font-size:12px;color:${SOFT};margin-top:4px">${s.sub}</div>` : ""}
-                        ${vis && s.highlight ? `<div style="font-size:24px;color:${WARN};font-weight:700;margin-top:5px">${s.highlight}</div>` : ""}
+                        ${vis && s.sub ? `<div style="font-size:13px;color:${SOFT};margin-top:4px">${s.sub}</div>` : ""}
+                        ${vis && s.highlight ? `<div style="font-size:28px;color:${WARN};font-weight:800;margin-top:8px">${s.highlight}</div>` : ""}
                     </div>
                 </div>`;
         }).join("");
 
         const atEnd = aboStep >= ABO.length - 1;
         document.getElementById("sec-abo").innerHTML = `
-            <h2 style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:20px">Gezahlt, ohne es zu merken.</h2>
+            <h2 style="font-family:'Playfair Display',serif;font-size:22px;margin-bottom:24px">Die Abo-Falle verstehen.</h2>
             <div>${rows}</div>
-            <div style="margin-top:20px">
-                ${atEnd ? `<button class="btn-dark" onclick="showSec('frage')">Zur Schlussfrage →</button>` : `<button class="btn-dark" onclick="aboStep++;renderAbo()">Weiter</button>`}
+            <div style="margin-top:24px">
+                ${atEnd ? `<button class="btn-dark" onclick="showSec('frage')">Zur letzten Frage →</button>` : `<button class="btn-dark" onclick="aboStep++;renderAbo()">Nächster Schritt</button>`}
             </div>`;
     }
 
     function renderFrage() {
         document.getElementById("sec-frage").innerHTML = `
-            <div style="text-align:center;padding:20px 0">
-                <div style="font-family:'Playfair Display',serif;font-size:22px;margin-bottom:30px">Welche Zahlung hast du erst bemerkt, als sie schon passiert war?</div>
-                <p style="color:${SOFT};font-size:13px;margin-bottom:30px">Diese Frage gehört dir. Denk kurz darüber nach.</p>
-                <button class="btn-outline" onclick="showSec('schutz')">Schutzfunktionen →</button>
+            <div style="text-align:center;padding:30px 0">
+                <div style="font-family:'Playfair Display',serif;font-size:24px;margin-bottom:24px;line-height:1.3">Welche Zahlung hast du erst bemerkt, als sie schon passiert war?</div>
+                <p style="color:${SOFT};font-size:15px;margin-bottom:32px;line-height:1.6">Es gibt keinen falschen Moment, um kurz innezuhalten. Was war dein letzter "Hoppla"-Moment?</p>
+                <button class="btn-outline" onclick="showSec('schutz')">Wie du dich schützt →</button>
             </div>`;
     }
 
     function renderSchutz() {
         const items = [
-            {i:"🔔", t:"Push-Mitteilungen für jede Zahlung aktivieren."},
-            {i:"⚙️", t:"Tages- und Monatslimiten in der App setzen."},
-            {i:"🔁", t:"Abos monatlich prüfen: Was kann weg?"},
-            {i:"🔒", t:"Wissen, wie man die Karte sofort sperrt."},
-            {i:"💵", t:"Eine kleine Bargeldreserve behalten."}
+            {i:"🔔", t:"Push-Mitteilungen für JEDE Transaktion aktivieren."},
+            {i:"⚙️", t:"Sinnvolle Tageslimiten in der Banking-App setzen."},
+            {i:"🔁", t:"Abos monatlich prüfen: Was brauche ich wirklich?"},
+            {i:"🔒", t:"Kartensperre: Den 'Not-Aus'-Knopf in der App kennen."},
+            {i:"💡", t:"Digital bezahlen, aber den Überblick behalten."}
         ];
         const rows = items.map(item => `
             <div class="prot-row">
-                <span>${item.i}</span><span style="font-size:13px">${item.t}</span>
+                <span style="font-size:20px">${item.i}</span>
+                <span style="font-size:14px; font-weight:500">${item.t}</span>
             </div>`).join("");
         
         document.getElementById("sec-schutz").innerHTML = `
-            <h2 style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:10px">Was wirklich hilft.</h2>
+            <h2 style="font-family:'Playfair Display',serif;font-size:22px;margin-bottom:12px">Dein Schutzschild.</h2>
             <div class="rule"></div>
             ${rows}
-            <button class="btn-reset" onclick="location.reload()">↻ Neu starten</button>`;
+            <div style="margin-top:30px">
+                <button class="btn-dark" style="background:${GREEN}" onclick="location.reload()">Lernreise neu starten</button>
+            </div>`;
     }
 
+    // Initialisierung
     renderNav();
     renderKarten();
 </script>
