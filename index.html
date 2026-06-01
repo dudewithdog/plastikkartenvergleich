@@ -7,8 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        
-        /* Basis-Setup für Apple-Geräte */
         body {
             background: #C8BFB2;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -17,18 +15,14 @@
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
         }
-        
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-
         #app {
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 20px 16px 60px;
         }
-
-        /* Navigation: Flexibler für verschiedene Breiten */
         .nav {
             display: flex;
             gap: 8px;
@@ -37,8 +31,6 @@
             flex-wrap: wrap;
             justify-content: center;
         }
-        
-        /* Das Papier-Layout: Adaptiv von Handy bis Tablet */
         .page {
             background: #F4EEE5;
             width: 100%;
@@ -48,40 +40,28 @@
             box-shadow: -4px 0 10px rgba(0,0,0,0.08), 0 20px 50px rgba(0,0,0,0.20);
             border-radius: 4px;
         }
-
-        /* iPad-Spezifische Anpassung */
         @media (min-width: 768px) {
             .page { padding: 50px 40px; }
             #app { padding-top: 40px; }
         }
-
         .spine {
             position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
+            left: 0; top: 0; bottom: 0;
             width: 12px;
             background: linear-gradient(90deg, rgba(0,0,0,0.07), transparent);
             pointer-events: none;
         }
-        
         .section { display: none; }
         .section.active { display: block; animation: fadeUp 0.5s ease both; }
-
-        /* Karten-Grid: Rutscht auf kleinen Handys automatisch untereinander */
         .cards-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
-
-        /* FIX: Mindesthöhe statt Aspect-Ratio auf dem Wrapper.
-           Die Vorderseite behält das Kreditkartenformat (siehe .face-front),
-           die Rückseite kann sich am Container ausrichten und überläuft nicht mehr. */
-        .flip-wrap { 
-            perspective: 1000px; 
-            width: 100%; 
+        .flip-wrap {
+            perspective: 1000px;
+            width: 100%;
             min-height: 220px;
         }
         .flip-inner {
@@ -94,7 +74,6 @@
             cursor: pointer;
         }
         .flip-inner.flipped { transform: rotateY(180deg); }
-        
         .face {
             position: absolute;
             inset: 0;
@@ -105,10 +84,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         .face-back { transform: rotateY(180deg); background: white; border: 1px solid rgba(0,0,0,0.05); }
-        
         .chip { width: 32px; height: 22px; border-radius: 4px; background: linear-gradient(135deg,#D4AF6A,#A8842A); flex-shrink: 0; }
-        
-        /* Buttons: Mindestens 44px Höhe für perfekte Touch-Bedienung */
         .btn-dark {
             width: 100%;
             min-height: 48px;
@@ -125,7 +101,6 @@
             transition: opacity 0.2s;
         }
         .btn-dark:active { opacity: 0.8; }
-        
         .btn-outline {
             min-height: 44px;
             padding: 12px 24px;
@@ -137,11 +112,8 @@
             text-transform: uppercase;
             font-weight: 600;
         }
-
         .rule { height: 1px; background: rgba(28,24,18,0.10); margin: 24px 0; }
         .pulse-hint { text-align: center; font-size: 11px; color: #A09080; margin-top: 12px; animation: pulse 2s infinite; }
-        
-        /* Abo-Liste */
         .prot-row {
             display: flex;
             align-items: flex-start;
@@ -154,10 +126,38 @@
         }
         .abo-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
         .abo-line { width: 2px; flex: 1; min-height: 20px; background: rgba(0,0,0,0.05); margin: 4px 0; }
+
+        /* Wann welche Karte – Empfehlungsblock */
+        .empfehlung {
+            background: rgba(255,255,255,0.5);
+            border: 1px solid rgba(28,24,18,0.10);
+            border-radius: 10px;
+            padding: 16px 18px;
+            margin-bottom: 20px;
+            animation: fadeUp 0.5s ease both;
+        }
+        .empfehlung-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1A1713;
+        }
+        .empfehlung-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(28,24,18,0.06);
+            font-size: 13px;
+        }
+        .empfehlung-row:last-child { border-bottom: none; }
+        .empfehlung-situation { color: #5A5248; }
+        .empfehlung-karte { font-weight: 700; color: #1A1713; }
+        .empfehlung-warn { color: #6A2C38; font-weight: 700; }
     </style>
 </head>
 <body>
-
 <div id="app">
     <div class="nav" id="nav"></div>
     <div class="page">
@@ -200,16 +200,13 @@
             const isActive = s === cur;
             const bg = isActive ? INK : isDone ? GREEN : "rgba(0,0,0,0.05)";
             const col = isActive || isDone ? "white" : FAINT;
-            return `
-                <div onclick="if(${i}<=idx)showSec('${s}')" style="padding:6px 12px; border-radius:20px; background:${bg}; color:${col}; font-size:11px; font-weight:600; cursor:pointer; transition: 0.3s">
-                    ${isDone ? "✓" : LBLS[i]}
-                </div>`;
+            return `<div onclick="if(${i}<=${idx})showSec('${s}')" style="padding:6px 12px;border-radius:20px;background:${bg};color:${col};font-size:11px;font-weight:600;cursor:pointer;transition:0.3s">${isDone ? "✓" : LBLS[i]}</div>`;
         }).join("");
     }
 
     function showSec(s) {
         SECS.forEach(id => document.getElementById("sec-" + id).classList.toggle("active", id === s));
-        cur = s; 
+        cur = s;
         renderNav();
         if(s === "karten") renderKarten();
         if(s === "abo") renderAbo();
@@ -221,7 +218,7 @@
     function toggleCard(id) {
         flipped.add(id);
         document.getElementById("fi-" + id).classList.toggle("flipped");
-        setTimeout(renderKarten, 300); 
+        setTimeout(renderKarten, 300);
     }
 
     function renderKarten() {
@@ -245,10 +242,34 @@
             </div>`).join("");
 
         const allDone = flipped.size === CARDS.length;
+
+        const empfehlung = allDone ? `
+            <div class="empfehlung">
+                <div class="empfehlung-title">Wann welche Karte?</div>
+                <div class="empfehlung-row">
+                    <span class="empfehlung-situation">Alltag & Einkauf</span>
+                    <span class="empfehlung-karte">Debitkarte</span>
+                </div>
+                <div class="empfehlung-row">
+                    <span class="empfehlung-situation">Online & Reisen</span>
+                    <span class="empfehlung-karte">Kreditkarte *</span>
+                </div>
+                <div class="empfehlung-row">
+                    <span class="empfehlung-situation">Budget begrenzen</span>
+                    <span class="empfehlung-karte">Prepaidkarte</span>
+                </div>
+                <div class="empfehlung-row">
+                    <span class="empfehlung-situation">Raten vermeiden</span>
+                    <span class="empfehlung-warn">niemals Revolving</span>
+                </div>
+                <div style="font-size:11px;color:${FAINT};margin-top:10px">* Immer vollständig zurückzahlen – sonst werden Zinsen fällig.</div>
+            </div>` : "";
+
         document.getElementById("sec-karten").innerHTML = `
             <h1 style="font-family:'Playfair Display',serif;font-size:26px;margin-bottom:12px">Welche Karte <em>kann was?</em></h1>
             <p style="font-size:14px;color:${SOFT};margin-bottom:24px">Tippe die Karten an, um ihre Geheimnisse zu lüften.</p>
             <div class="cards-grid">${grid}</div>
+            ${empfehlung}
             ${allDone ? `<button class="btn-dark" onclick="showSec('abo')">Weiter zum Abo-Check →</button>` : `<div class="pulse-hint">Bitte alle Karten umdrehen</div>`}`;
     }
 
@@ -303,9 +324,9 @@
         const rows = items.map(item => `
             <div class="prot-row">
                 <span style="font-size:20px">${item.i}</span>
-                <span style="font-size:14px; font-weight:500">${item.t}</span>
+                <span style="font-size:14px;font-weight:500">${item.t}</span>
             </div>`).join("");
-        
+
         document.getElementById("sec-schutz").innerHTML = `
             <h2 style="font-family:'Playfair Display',serif;font-size:22px;margin-bottom:12px">Dein Schutzschild.</h2>
             <div class="rule"></div>
@@ -315,7 +336,6 @@
             </div>`;
     }
 
-    // Initialisierung
     renderNav();
     renderKarten();
 </script>
